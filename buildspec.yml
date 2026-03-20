@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into DockerHub
+      - docker login -u $DOCKER_USER -p $DOCKER_PASS
+
+  build:
+    commands:
+      - docker build -t devbank-backend .
+      - docker tag devbank-backend YOUR_DOCKER/devbank-backend:latest
+
+  post_build:
+    commands:
+      - docker push YOUR_DOCKER/devbank-backend:latest

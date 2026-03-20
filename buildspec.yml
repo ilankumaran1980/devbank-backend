@@ -3,14 +3,26 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo Logging into DockerHub
-      - docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - echo Logging in to Docker Hub...
+      # Ensure DOCKER_HUB_USERNAME and DOCKER_HUB_PASSWORD are set in CodeBuild Environment Variables
+      - echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin
 
   build:
     commands:
-      - docker build -t devbank-backend .
-      - docker tag devbank-backend YOUR_DOCKER/devbank-backend:latest
+      - echo Build started on `date`
+      - echo Building the Backend Docker image...
+      - docker build -t ilan25/devbank-backend:latest .
+      - docker tag ilan25/devbank-backend:latest ilan25/devbank-backend:$CODEBUILD_RESOLVED_SOURCE_VERSION
 
   post_build:
     commands:
-      - docker push YOUR_DOCKER/devbank-backend:latest
+      - echo Pushing the Docker images to Docker Hub...
+      - docker push ilan25/devbank-backend:latest
+      - docker push ilan25/devbank-backend:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo Writing imagedefinitions.json for ECS...
+      # IMPORTANT: "name" must match the Container Name in your ECS Task Definition
+      - printf '[{"name":"backend-container","imageUri":"ilan25/devbank-backend:latest"}]' > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
